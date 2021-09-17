@@ -11,7 +11,7 @@ size_t my_strlen (const char str[]) {
 char* my_strchr (const char str[], int symcode) {
     int i = -1;
     for (i = 0; str[i] != '\0'; i++)
-        if (str[i] == symcode) return (char*) &str[i];      //      str + i === &str[i]
+        if (str[i] == symcode) return (char*) &str[i];
     
     if (symcode == '\0') return (char*) &str[i];
 
@@ -60,7 +60,7 @@ char* my_strncat (char strto[], const char strfrom[], size_t num) {
     return strto;
 }
 
-char* my_fgets (char str[], int num, FILE* file) {      //      Почему int num, а не size_t num?
+char* my_fgets (char str[], int num, FILE* file) {
     char symb = NULL;
     int i = -1;
 
@@ -70,17 +70,19 @@ char* my_fgets (char str[], int num, FILE* file) {      //      Почему int
     }
     str[i] = '\0';
 
+    if (i == 1 && feof (file)) return NULL;
     if (ferror (file) || i == 0) return NULL;
 
     return str;
 }
 
 char* my_strdup (const char initstr[]) {
-    char* str = (char*) malloc ((my_strlen(initstr) + 1) * sizeof (char));
+    char* str = (char*) calloc (my_strlen (initstr) + 1, sizeof (char));
+    if (str == NULL) return NULL;
     return my_strcpy (str, initstr);
 }
 
-int my_getline (char* str[], size_t* size, FILE* file) {     //      char* str[] === char** str
+ssize_t my_getline (char* str[], size_t* size, FILE* file) {
     int symcode = -1;
     int i = -1;
     ssize_t real_buff_size = -1;
@@ -88,7 +90,8 @@ int my_getline (char* str[], size_t* size, FILE* file) {     //      char* str[]
     fgetc (file);
     if (feof(file)) return -1;
 
-    rewind (file);
+    fseek (file, -1, 1);
+
     for (real_buff_size = 0; symcode != '\n'; real_buff_size++) {
         symcode = fgetc (file);
         if (feof(file)) break;
@@ -96,11 +99,15 @@ int my_getline (char* str[], size_t* size, FILE* file) {     //      char* str[]
     real_buff_size++;
 
     symcode = -1;
-    rewind (file);
+    if (feof (file)) {
+        fseek (file, -real_buff_size + 1, 1);
+    } else {
+        fseek (file, -real_buff_size, 1);
+    }
 
     if (*str == NULL) {
         char* str0 = NULL;
-        str0 = (char*) malloc ((real_buff_size) * sizeof (char));
+        str0 = (char*) calloc (real_buff_size, sizeof (char));
         if (str0 == NULL) return -1;
         *str = str0;
 
